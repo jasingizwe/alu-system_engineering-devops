@@ -1,31 +1,26 @@
 #!/usr/bin/env bash
-# bash script that configures Nginx server to respond to status code '404',
-# that returns a custom Error 404 page containing "Ceci n'est pas une page".
+# Configure Nginx server so that /redirect_me is redirecting to another page
 
-apt-get update
-apt-get install -y nginx
-
-mkdir /etc/nginx/html
-touch /etc/nginx/html/index.html
-echo "Holberton School" > /etc/nginx/html/index.html
-touch /etc/nginx/html/404.html
-echo "Ceci n'est pas une page" > /etc/nginx/html/404.html
-
-printf %s "server {
-    listen 80;
-    listen [::]:80 default_server;
-    root   /etc/nginx/html;
-    index  index.html index.htm;
-
-    location /redirect_me {
-        return 301 http://youtube.com/;
-    }
-
-    error_page 404 /404.html;
-    location /404 {
-      root /etc/nginx/html;
-      internal;
-    }
-}" > /etc/nginx/sites-available/default
-
-service nginx restart
+sudo apt-get update -y
+sudo apt-get install -y nginx
+sudo ufw allow 'Nginx HTTP'
+echo "Ceci n'est pas une page" | sudo tee /var/www/html/page404.html
+config=\
+"server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html;
+	error_page 404 /page404.html;
+	server_name _;
+	location / {
+		try_files \$uri \$uri/ =404;
+        }
+	location /redirect_me {
+                return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;
+        }
+}
+"
+echo "Holberton School" | sudo tee /var/www/html/index.html
+echo "$config" | sudo tee /etc/nginx/sites-available/default
+sudo service nginx restart
